@@ -31,6 +31,7 @@ function makeRow(props){
 }
 
 function initialize() {
+	var socket = Rx.DOM.fromWebSocket('ws://127.0.0.1:8080');
 	var quakes = Rx.Observable
 		.interval(5000)
 		.flatMap(function(){
@@ -59,6 +60,24 @@ function initialize() {
 				size: quake.properties.mag * 10000
 			};
 		});
+
+	quakes.bufferWithCount(100)
+		.subscribe(function(quakes){
+			console.log(quakes);
+			var quakesData = quakes.map(function(quake){
+				return {
+					id: quake.id,
+					lat: quake.lat,
+					lng: quake.lng,
+					mag: quake.mag
+				};
+			});
+			socket.onNext(JSON.stringify({quakes: quakesData}));
+		});
+
+	socket.subscribe(function(message){
+		console.log(JSON.parse(message.data));
+	})
 
 	// add data to map
 	quakes.subscribe(function(quake){
