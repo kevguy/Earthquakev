@@ -30,6 +30,24 @@ function makeRow(props){
 	return row;
 }
 
+function makeTweetElement(tweetObj) {
+	var tweetEl = document.createElement('div');
+	tweetEl.className = 'tweet';
+	var content = 	'<img src="$tweetImg" class="avatar" />' +
+					'<div class="content">$text</div>' +
+					'<div class="time">$time</div>';
+	var time = new Date(tweetObj.created_at);
+	var timeText = time.toLocaleDateString() + ' ' + time.toLocaleTimeString();
+	
+	content = content.replace('$tweetImg', tweetObj.user.profile_image_url);
+	content = content.replace('$text', tweetObj.text);
+	content = content.replace('$time', timeText);
+	tweetEl.innerHTML = content;
+	
+	return tweetEl;
+
+}
+
 function initialize() {
 	var socket = Rx.DOM.fromWebSocket('ws://127.0.0.1:8080');
 	var quakes = Rx.Observable
@@ -61,7 +79,7 @@ function initialize() {
 			};
 		});
 
-	quakes.bufferWithCount(100)
+	quakes.bufferWithCount(1000)
 		.subscribe(function(quakes){
 			console.log(quakes);
 			var quakesData = quakes.map(function(quake){
@@ -77,7 +95,14 @@ function initialize() {
 
 	socket.subscribe(function(message){
 		console.log(JSON.parse(message.data));
-	})
+	});
+
+	socket
+		.map(function(message) { return JSON.parse(message.data); })
+		.subscribe(function(data) {
+			var container = document.getElementById('tweet_container');
+			container.insertBefore(makeTweetElement(data), container.firstChild);
+		});
 
 	// add data to map
 	quakes.subscribe(function(quake){

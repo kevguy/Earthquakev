@@ -18,6 +18,9 @@ function onConnect(ws) {
 			function(quake){
 				quake = JSON.parse(quake);
 				console.log(quake);	
+			},
+			function(err){
+				console.log('on message err' + err);
 			}
 		);
 
@@ -33,6 +36,34 @@ function onConnect(ws) {
 			}
 		});
 	});
+
+	Rx.Observable.fromEvent(ws, 'message')
+		.flatMap(function(quakesobj){
+			quakesObj = JSON.parse(quakesObj);
+			return Rx.Observable.from(quakesObj.quakes);
+		})
+		.scan([], function(boundsArray, quake){
+			var bounds = [
+				quake.lng - 0.3, quake.lat - 0.15,
+				quake.lng + 0.4, quake.lat + 0.15
+			].map(function(coordinate){
+				coordinate = corrdinate.toString();
+				return coordinate.match(/\-?\d+(\.\-?\d{2})?/)[0];
+			});
+
+			boundsArray.concat(bounds);
+			return boundsArray.slice(Math.max(boundsArray.length - 50, 0));
+		})
+		.subscribe(
+			function(boundsArray) {
+				stream.stop();
+				stream.params.locations = boundsArray.toString();
+				stream.start();
+			},
+			function(err){
+				console.log('send message err ' + err);
+			}
+		);
 }
 
 var Server = new WebSocketServer({ port: 8080 });
