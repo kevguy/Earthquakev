@@ -14,6 +14,8 @@ function isHovering(element){
 
 function makeRow(props){
 	var row = document.createElement('tr');
+
+	// equivalent to quake.id
 	row.id = props.net + props.code;
 
 	var date = new Date(props.time);
@@ -61,11 +63,43 @@ function initialize() {
 	// add data to map
 	quakes.subscribe(function(quake){
 		var circle = L.circle([quake.lat, quake.lng], quake.size).addTo(map);
+
+		// add circle element to quakeLayer
 		quakeLayer.addLayer(circle);
+		// store layer id of circle with earthquale id as key
 		codeLayers[quake.id] = quakeLayer.getLayerId(circle);
 	});
 
 	var table = document.getElementById('quakes_info');
+
+
+	function getRowFromEvent(event) {
+		return Rx.Observable
+			.fromEvent(table, event)
+			.filter(function(event){
+				var el = event.target;
+				return el.tagName === 'TD' && el.parentNode.id.length;
+			})
+			.pluck('target', 'parentNode')
+			.distinctUntilChanged();
+	}
+
+	getRowFromEvent('mouseover')
+		.pairwise()
+		.subscribe(function(rows){
+			var prevCircle = quakeLayer.getLayer(codeLayers[rows[0].id]);
+			var currCircle = quakeLayer.getLayer(codeLayers[rows[1].id]);
+			console.log(rows[0].id);
+			prevCircle.setStyle({color: '#0000ff'});
+			currCircle.setStyle({color: '#ff0000'});
+		});
+
+	getRowFromEvent('click')
+	    .subscribe(function(row) {
+	    	var circle = quakeLayer.getLayer(codeLayers[row.id]);
+	    	map.panTo(circle.getLatLng());
+	    });
+
 	quakes
 		//.pluck('properties')
 		.map(makeRow)
@@ -82,9 +116,10 @@ function initialize() {
 		})
 		.subscribe(
 			function(fragment){
+				/*
 				var row = fragment.firstChild;
 				var circle = quakeLayer.getLayer(codeLayers[row.id]);
-
+				
 				isHovering(row).subscribe(function(hovering){
 					circle.setStyle({ color: hovering ? '#ff0000' : '#0000ff' });
 				})
@@ -92,7 +127,7 @@ function initialize() {
 				Rx.DOM.click(row).subscribe(function(){
 					map.panTo(circle.getLatLng());
 				});
-
+				*/
 				table.appendChild(fragment);
 			}
 		);
