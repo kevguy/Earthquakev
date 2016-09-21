@@ -1,3 +1,17 @@
+// store correlation between an earthquake code and the internal layer ID
+var codeLayers = {};
+// store all the earthquake circles
+var quakeLayer = L.layerGroup([]).addTo(map);
+
+var identity = Rx.helpers.identity;
+
+function isHovering(element){
+	var over = Rx.DOM.mouseover(element).map(identity(true));
+	var out = Rx.DOM.mouseout(element).map(identity(false));
+
+	return over.merge(out);
+}
+
 function makeRow(props){
 	var row = document.createElement('tr');
 	row.id = props.net + props.code;
@@ -39,13 +53,16 @@ function initialize() {
 				time: quake.properties.time,
 				place: quake.properties.place,
 				mag: quake.properties.mag,
+				id: quake.properties.net + quake.properties.code,
 				size: quake.properties.mag * 10000
 			};
 		});
 
 	// add data to map
 	quakes.subscribe(function(quake){
-		L.circle([quake.lat, quake.lng], quake.size).addTo(map);
+		var circle = L.circle([quake.lat, quake.lng], quake.size).addTo(map);
+		quakeLayer.addLayer(circle);
+		codeLayers[quake.id] = quakeLayer.getLayerId(circle);
 	});
 
 	var table = document.getElementById('quakes_info');
@@ -65,6 +82,17 @@ function initialize() {
 		})
 		.subscribe(
 			function(fragment){
+				var row = fragment.firstChild;
+				var circle = quakeLayer.getLayer(codeLayers[row.id]);
+
+				isHovering(row).subscribe(function(hovering){
+					circle.setStyle({ color: hovering ? '#ff0000' : '#0000ff' });
+				})
+
+				Rx.DOM.click(row).subscribe(function(){
+					map.panTo(circle.getLatLng());
+				});
+
 				table.appendChild(fragment);
 			}
 		);
