@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8">
 
+    <link rel="stylesheet" href="./css/styles.css" />
     <link rel="stylesheet"
     href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
@@ -22,7 +23,24 @@
   </head>
 
   <body>
-    <div id="map"></div>
+    <div id="wrapper">
+      <div id="container">
+        <div id="map"></div>
+        <div id="list">
+          <table>
+            <thead>
+              <tr>
+                <th>Location</th>
+                <th>Magnitude</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="quakes_info">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
     <script>
       var QUAKE_URL = 'http://earthquake.usgs.gov/earthquakes/feed/v1.0/' +
         'summary/all_day.geojsonp';
