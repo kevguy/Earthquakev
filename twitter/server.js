@@ -20,6 +20,19 @@ function onConnect(ws) {
 				console.log(quake);	
 			}
 		);
+
+	var stream = T.stream('statuses/filter', {
+		track: 'earthquake',
+		locations: []
+	});
+
+	Rx.Observable.fromEvent(stream, 'tweet').subscribe(function(tweetObject) {
+		ws.send(JSON.stringify(tweetObject), function(err) {
+			if (err) {
+				console.log('There was an error sending the message');
+			}
+		});
+	});
 }
 
 var Server = new WebSocketServer({ port: 8080 });
