@@ -29,6 +29,7 @@ function initialize() {
 		.distinct(function(quake) {
 			return quake.properties.code;
 		})
+		.share()
 		.map(function(quake){
 			return {
 				lat: quake.geometry.coordinates[1],
@@ -51,9 +52,20 @@ function initialize() {
 	quakes
 		//.pluck('properties')
 		.map(makeRow)
+		.bufferWithTime(500)
+		.filter(function(rows){
+			return (rows.length > 0);
+		})
+		.map(function(rows){
+			var fragment = document.createDocumentFragment();
+			rows.forEach(function(row){
+				fragment.appendChild(row);
+			});
+			return fragment;
+		})
 		.subscribe(
-			function(row){
-				table.appendChild(row);
+			function(fragment){
+				table.appendChild(fragment);
 			}
 		);
 
